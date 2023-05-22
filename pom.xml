@@ -36,7 +36,13 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.build.outputTimestamp>1</project.build.outputTimestamp>
-
+		<jdk.version>11</jdk.version>
+		<runelite.version>1.9.11-SNAPSHOT</runelite.version>
+		<launcher.version>2.1.8-SNAPSHOT</launcher.version>
+		<lombok.version>1.18.22</lombok.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>${jdk.version}</maven.compiler.source>
+		<maven.compiler.target>${jdk.version}</maven.compiler.target>
 		<main.class>net.runelite.launcher.Launcher</main.class>
 	</properties>
 
@@ -147,6 +153,11 @@
 			<groupId>net.runelite.archive-patcher</groupId>
 			<artifactId>archive-patcher-applier</artifactId>
 			<version>1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>net.runelite</groupId>
+			<artifactId>client</artifactId>
+			<version>${runelite.version}</version>
 		</dependency>
 
 		<dependency>

@@ -69,6 +69,7 @@ import net.runelite.launcher.beans.Bootstrap;
 import net.runelite.launcher.beans.Diff;
 import net.runelite.launcher.beans.Platform;
 import org.slf4j.LoggerFactory;
+import runelite.LauncherHijack;
 
 import static net.runelite.launcher.JvmLauncher.getProxyDetails;
 
@@ -88,6 +89,14 @@ public class Launcher
 			openUI();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
+		}
+		System.setProperty("runelite.launcher.reflect", "true");
+		new LauncherHijack();
+		// Launcher.main(args);
+		try{
+			Class<?> clazz = Class.forName("net.runelite.launcher.Launcher");
+			clazz.getMethod("main", String[].class).invoke(null, (Object) args);
+		} catch(Exception ignored){
 		}
 	}
 
