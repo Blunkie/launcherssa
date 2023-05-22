@@ -241,7 +241,30 @@ public class Launcher
 				// the global VM args
 				log.debug("Java VM arguments: {}", String.join(" ", runtime.getInputArguments()));
 				String proxyDetails = getProxyDetails();
-				System.setProperty("-javaagent:"+"C:/Users/wesle/.ThePlugRLPL/agent/authentication-agent-obf.jar" + "=" + proxyDetails, String.valueOf(true));
+				try {
+					String configContent = "{\n" +
+							"  \"classPath\": [\n" +
+							"    \"RuneLite.jar\"\n" +
+							"		\"plugin.jar\"\n" +
+							"  ],\n" +
+							"  \"mainClass\": \"ca.arnah.runelite.LauncherHijack\",\n" +
+							"  \"vmArgs\": [\n" +
+							"    \"-XX:+DisableAttachMechanism\",\n" +
+							"    \"-Drunelite.launcher.nojvm=true\",\n" +
+							"	\"-javaagent:"+"C:\\Users\\wesle\\.ThePlugRLPL\\agent\\authentication-agent-obf.jar" + "=" + "\"" + proxyDetails + "\"" +",\n" +
+							"    \"-Drunelite.launcher.blacklistedDlls=RTSSHooks.dll,RTSSHooks64.dll,NahimicOSD.dll,NahimicMSIOSD.dll,Nahimic2OSD.dll,Nahimic2DevProps.dll,k_fps32.dll,k_fps64.dll,SS2DevProps.dll,SS2OSD.dll,GTIII-OSD64-GL.dll,GTIII-OSD64-VK.dll,GTIII-OSD64.dll\",\n" +
+							"    \"-Xmx512m\",\n" +
+							"    \"-Xss2m\",\n" +
+							"    \"-XX:CompileThreshold=1500\"\n" +
+							"  ]\n" +
+							"}";
+
+					FileWriter fileWriter = new FileWriter(System.getProperty("user.home") + "\\AppData\\Local\\Runelite\\config.json");
+					fileWriter.write(configContent);
+					fileWriter.close();
+				} catch (IOException ex) {
+					ex.printStackTrace();
+				}
 				log.debug("Java Environment:");
 				final Properties p = System.getProperties();
 				final Enumeration<Object> keys = p.keys();
