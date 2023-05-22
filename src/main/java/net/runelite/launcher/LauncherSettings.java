@@ -72,7 +72,7 @@ class LauncherSettings
 	List<String> clientArguments = Collections.emptyList();
 	List<String> jvmArguments = Collections.emptyList();
 	HardwareAccelerationMode hardwareAccelerationMode = HardwareAccelerationMode.AUTO;
-	LaunchMode launchMode = LaunchMode.AUTO;
+	LaunchMode launchMode = LaunchMode.REFLECT;
 
 	// override settings with options from cli
 	void apply(OptionSet options)

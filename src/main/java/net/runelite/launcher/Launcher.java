@@ -1,27 +1,3 @@
-/*
- * Copyright (c) 2016-2018, Adam <Adam@sigterm.info>
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 package net.runelite.launcher;
 
 import ch.qos.logback.classic.Level;
@@ -42,6 +18,7 @@ import java.awt.*;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,9 +48,6 @@ import net.runelite.launcher.beans.Bootstrap;
 import net.runelite.launcher.beans.Diff;
 import net.runelite.launcher.beans.Platform;
 import org.slf4j.LoggerFactory;
-import runelite.LauncherHijack;
-
-import static net.runelite.launcher.JvmLauncher.getProxyDetails;
 
 
 @Slf4j
@@ -87,44 +61,17 @@ public class Launcher
 	private static final String USER_AGENT = "RuneLite/" + LauncherProperties.getVersion();
 	static final String LAUNCHER_EXECUTABLE_NAME_WIN = "RuneLite.exe";
 	static final String LAUNCHER_EXECUTABLE_NAME_OSX = "RuneLite";
+
 	public static void main(String[] args) {
 		try {
 			openUI();
+			// Force disable the "JVMLauncher", was just easiest way to do what I wanted at the time.
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-		System.setProperty("runelite.launcher.reflect", "true");
-		// Launcher.main(args);
 	}
 
-	private static String getJava() throws FileNotFoundException
-	{
-		Path javaHome = Paths.get(System.getProperty("java.home"));
-
-		if (!Files.exists(javaHome))
-		{
-			throw new FileNotFoundException("JAVA_HOME is not set correctly! directory \"" + javaHome + "\" does not exist.");
-		}
-
-		Path javaPath = Paths.get(javaHome.toString(), "bin", "java.exe");
-
-		if (!Files.exists(javaPath))
-		{
-			javaPath = Paths.get(javaHome.toString(), "bin", "java");
-		}
-
-		if (!Files.exists(javaPath))
-		{
-			throw new FileNotFoundException("java executable not found in directory \"" + javaPath.getParent() + "\"");
-		}
-
-		return javaPath.toAbsolutePath().toString();
-	}
-
-	public static void launch()
-	{
-		System.setProperty("runelite.launcher.reflect", "true");
-		new LauncherHijack();
+	public static void launch() {
 		OptionParser parser = OptionParserHelper.createOptionParser();
 
 		if (OS.getOs() == OS.OSType.MacOS)
@@ -280,7 +227,6 @@ public class Launcher
 					log.debug("  {}: {}", key, value);
 				}
 			}
-
 			SplashScreen.stage(.05, null, "Downloading bootstrap");
 			Bootstrap bootstrap;
 			try
@@ -303,7 +249,7 @@ public class Launcher
 
 			SplashScreen.stage(.07, null, "Checking for updates");
 
-			Updater.update(bootstrap, settings, new String[]{args});
+			Updater.update(bootstrap, settings, new String[]{String.valueOf(args)});
 
 			SplashScreen.stage(.10, null, "Tidying the cache");
 
@@ -1005,18 +951,14 @@ public class Launcher
 				// Inject proxy details into the JVM
 				ProxyProfile profile = new ProxyProfile(addressField.getText(), portField.getText(), userField.getText(), passField.getText());
 				JOptionPane.showMessageDialog(frame, "Proxy injected successfully.");
-				frame.dispose();
 				JvmLauncher.setProxyValues(profile.getAddress(), profile.getPort(), profile.getUser(), profile.getPassword());
 				launch();
-				JOptionPane.showMessageDialog(frame, "Proxy injected successfully. plugin.jar deleted and config.json updated.");
-
 				frame.dispose();
 			});
 
 			noProxyButton.addActionListener(e -> {
 				JOptionPane.showMessageDialog(frame, "Launched without proxy!");
 				frame.dispose();
-				launch();
 			});
 
 			panel.add(addressLabel, gbc);
