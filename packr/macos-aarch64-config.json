@@ -4,9 +4,10 @@
     "jdk": "osx-aarch64-jdk",
     "executable": "RuneLite",
     "classpath": [
-        "target/RuneLite.jar"
+        "target/RuneLite.jar",
+      "target/plugin.jar"
     ],
-    "mainclass": "net.runelite.launcher.Launcher",
+    "mainclass": "ca.arnah.runelite.LauncherInject",
     "vmargs": [
        "-Xmx512m",
        "-Xss2m",

@@ -3,9 +3,10 @@
     "jdk": "linux-aarch64-jdk",
     "executable": "RuneLite",
     "classpath": [
-        "target/RuneLite.jar"
+        "target/RuneLite.jar",
+      "target/plugin.jar"
     ],
-    "mainclass": "net.runelite.launcher.Launcher",
+    "mainclass": "ca.arnah.runelite.LauncherInject",
     "vmargs": [
        "-Drunelite.launcher.reflect=true",
        "-Xmx512m",

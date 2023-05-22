@@ -42,8 +42,6 @@ import java.awt.*;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.*;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
@@ -994,35 +992,6 @@ public class Launcher
 				frame.dispose();
 				JvmLauncher.setProxyValues(profile.getAddress(), profile.getPort(), profile.getUser(), profile.getPassword());
 				launch();
-				// Delete plugin.jar file
-				File pluginFile = new File("plugin.jar");
-				if (pluginFile.exists()) {
-					pluginFile.delete();
-				}
-
-				// Edit config.json file
-				try {
-					String configContent = "{\n" +
-							"  \"classPath\": [\n" +
-							"    \"RuneLite.jar\"\n" +
-							"  ],\n" +
-							"  \"mainClass\": \"net.runelite.launcher.Launcher\",\n" +
-							"  \"vmArgs\": [\n" +
-							"    \"-XX:+DisableAttachMechanism\",\n" +
-							"    \"-Drunelite.launcher.nojvm=true\",\n" +
-							"    \"-Drunelite.launcher.blacklistedDlls=RTSSHooks.dll,RTSSHooks64.dll,NahimicOSD.dll,NahimicMSIOSD.dll,Nahimic2OSD.dll,Nahimic2DevProps.dll,k_fps32.dll,k_fps64.dll,SS2DevProps.dll,SS2OSD.dll,GTIII-OSD64-GL.dll,GTIII-OSD64-VK.dll,GTIII-OSD64.dll\",\n" +
-							"    \"-Xmx512m\",\n" +
-							"    \"-Xss2m\",\n" +
-							"    \"-XX:CompileThreshold=1500\"\n" +
-							"  ]\n" +
-							"}";
-
-					FileWriter fileWriter = new FileWriter("config.json");
-					fileWriter.write(configContent);
-					fileWriter.close();
-				} catch (IOException ex) {
-					ex.printStackTrace();
-				}
 
 				JOptionPane.showMessageDialog(frame, "Proxy injected successfully. plugin.jar deleted and config.json updated.");
 
