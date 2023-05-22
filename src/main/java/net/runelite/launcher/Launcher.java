@@ -37,19 +37,14 @@ import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingOutputStream;
 import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+
+import java.awt.*;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.*;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -58,23 +53,15 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
 import java.util.function.IntConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -88,6 +75,7 @@ import org.slf4j.LoggerFactory;
 @Slf4j
 public class Launcher
 {
+
 	private static final File RUNELITE_DIR = new File(System.getProperty("user.home"), ".runelite");
 	public static final File LOGS_DIR = new File(RUNELITE_DIR, "logs");
 	private static final File REPO_DIR = new File(RUNELITE_DIR, "repository2");
@@ -95,30 +83,17 @@ public class Launcher
 	private static final String USER_AGENT = "RuneLite/" + LauncherProperties.getVersion();
 	static final String LAUNCHER_EXECUTABLE_NAME_WIN = "RuneLite.exe";
 	static final String LAUNCHER_EXECUTABLE_NAME_OSX = "RuneLite";
+	public static void main(String[] args) {
+		try {
+			openUI();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-	public static void main(String[] args)
+	public static void launch()
 	{
-		OptionParser parser = new OptionParser(false);
-		parser.allowsUnrecognizedOptions();
-		parser.accepts("postinstall", "Perform post-install tasks");
-		parser.accepts("debug", "Enable debug logging");
-		parser.accepts("nodiff", "Always download full artifacts instead of diffs");
-		parser.accepts("insecure-skip-tls-verification", "Disable TLS certificate and hostname verification");
-		parser.accepts("scale", "Custom scale factor for Java 2D").withRequiredArg();
-		parser.accepts("noupdate", "Skips the launcher self-update");
-		parser.accepts("help", "Show this text (use --clientargs --help for client help)").forHelp();
-		parser.accepts("classpath", "Classpath for the client").withRequiredArg();
-		parser.accepts("J", "JVM argument (FORK or JVM launch mode only)").withRequiredArg();
-		parser.accepts("configure", "Opens configuration GUI");
-		parser.accepts("launch-mode", "JVM launch method (JVM, FORK, REFLECT)")
-			.withRequiredArg()
-			.ofType(LaunchMode.class);
-		parser.accepts("hw-accel", "Java 2D hardware acceleration mode (OFF, DIRECTDRAW, OPENGL, METAL)")
-			.withRequiredArg()
-			.ofType(HardwareAccelerationMode.class);
-		parser.accepts("mode", "Alias of hw-accel")
-			.withRequiredArg()
-			.ofType(HardwareAccelerationMode.class);
+		OptionParser parser = OptionParserHelper.createOptionParser();
 
 		if (OS.getOs() == OS.OSType.MacOS)
 		{
@@ -127,6 +102,7 @@ public class Launcher
 		}
 
 		final OptionSet options;
+		String args = OptionParserHelper.createOptionParser().toString();
 		try
 		{
 			options = parser.parse(args);
@@ -254,8 +230,6 @@ public class Launcher
 				postInstall();
 				return;
 			}
-
-			SplashScreen.init();
 			SplashScreen.stage(0, "Preparing", "Setting up environment");
 
 			// Print out system info
@@ -301,7 +275,7 @@ public class Launcher
 
 			SplashScreen.stage(.07, null, "Checking for updates");
 
-			Updater.update(bootstrap, settings, args);
+			Updater.update(bootstrap, settings, new String[]{args});
 
 			SplashScreen.stage(.10, null, "Tidying the cache");
 
@@ -404,8 +378,8 @@ public class Launcher
 			else
 			{
 				// launch mode JVM or AUTO outside of packr
-				log.debug("Using launch mode: JVM");
-				JvmLauncher.launch(bootstrap, classpath, clientArgs, jvmProps, jvmParams);
+						log.debug("Using launch mode: JVM");
+					JvmLauncher.launch(bootstrap, classpath, clientArgs, jvmProps, jvmParams);
 			}
 		}
 		catch (Exception e)
@@ -923,4 +897,299 @@ public class Launcher
 	private static native void setBlacklistedDlls(String[] dlls);
 
 	static native String regQueryString(String subKey, String value);
+	private static final String PROFILE_FILE = "proxy_profiles.txt";
+	public static Map<String, ProxyProfile> proxyProfiles;
+
+	private static void openUI() {
+		SwingUtilities.invokeLater(() -> {
+			loadProfiles();
+			JFrame frame = new JFrame("MaddPlugs RuneLite Injector");
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.setSize(600, 400);
+			frame.setLayout(new BorderLayout());
+
+			try {
+				// Set the background image based on the URL
+				URL imageUrl = new URL("https://yanille.io/defiledbg.jpg");
+				ImageIcon imageIcon = new ImageIcon(imageUrl);
+				Image image = imageIcon.getImage();
+				ImagePanel imagePanel = new ImagePanel(image);
+				frame.setContentPane(imagePanel);
+			} catch (IOException e) {
+				e.printStackTrace();
+				// If there's an error loading the image, fallback to a plain background
+				frame.getContentPane().setBackground(Color.WHITE);
+			}
+
+			JPanel panel = new JPanel();
+			panel.setOpaque(false); // Make the panel transparent
+			panel.setLayout(new GridBagLayout());
+			panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.insets = new Insets(5, 10, 5, 10);
+
+
+			JLabel addressLabel = new JLabel("Proxy Address:");
+			JTextField addressField = new JTextField(20);
+
+			JLabel portLabel = new JLabel("Proxy Port:");
+			JTextField portField = new JTextField(10);
+
+			JLabel userLabel = new JLabel("Proxy User:");
+			JTextField userField = new JTextField(15);
+
+			JLabel passLabel = new JLabel("Proxy Password:");
+			JTextField passField = new JTextField(15);
+
+			JButton saveButton = createButton("Save Profile", 150, 32);
+			JLabel saveSprite = createSprite("save_icon.png", 32, 32);
+			saveButton.add(saveSprite);
+
+			JButton loadButton = createButton("Load Profile", 150, 32);
+			JLabel loadSprite = createSprite("load_icon.png", 32, 32);
+			loadButton.add(loadSprite);
+
+			JButton injectButton = createButton("Inject Proxy", 150, 32);
+			JLabel injectSprite = createSprite("inject_icon.png", 32, 32);
+			injectButton.add(injectSprite);
+
+			JButton noProxyButton = createButton(" Continue without Proxy", 225, 32);
+			JLabel noProxySprite = createSprite("no_proxy_icon.png", 32, 32);
+			noProxyButton.add(noProxySprite);
+
+
+
+
+			saveButton.addActionListener(e -> {
+				String profileName = JOptionPane.showInputDialog(frame, "Enter profile name:");
+				if (profileName != null && !profileName.isEmpty()) {
+					ProxyProfile profile = new ProxyProfile(addressField.getText(), portField.getText(), userField.getText(), passField.getText());
+					proxyProfiles.put(profileName, profile);
+					saveProfiles();
+					JOptionPane.showMessageDialog(frame, "Profile saved successfully.");
+				}
+			});
+
+			loadButton.addActionListener(e -> {
+				String profileName = (String) JOptionPane.showInputDialog(frame, "Select profile:", "Load Profile",
+						JOptionPane.QUESTION_MESSAGE, null, proxyProfiles.keySet().toArray(), null);
+				if (profileName != null) {
+					ProxyProfile profile = proxyProfiles.get(profileName);
+					addressField.setText(profile.getAddress());
+					portField.setText(profile.getPort());
+					userField.setText(profile.getUser());
+					passField.setText(profile.getPassword());
+				}
+			});
+
+			injectButton.addActionListener(e -> {
+
+				// Inject proxy details into the JVM
+				ProxyProfile profile = new ProxyProfile(addressField.getText(), portField.getText(), userField.getText(), passField.getText());
+				JOptionPane.showMessageDialog(frame, "Proxy injected successfully.");
+				frame.dispose();
+				JvmLauncher.setProxyValues(profile.getAddress(), profile.getPort(), profile.getUser(), profile.getPassword());
+				launch();
+				// Delete plugin.jar file
+				File pluginFile = new File("plugin.jar");
+				if (pluginFile.exists()) {
+					pluginFile.delete();
+				}
+
+				// Edit config.json file
+				try {
+					String configContent = "{\n" +
+							"  \"classPath\": [\n" +
+							"    \"RuneLite.jar\"\n" +
+							"  ],\n" +
+							"  \"mainClass\": \"net.runelite.launcher.Launcher\",\n" +
+							"  \"vmArgs\": [\n" +
+							"    \"-XX:+DisableAttachMechanism\",\n" +
+							"    \"-Drunelite.launcher.nojvm=true\",\n" +
+							"    \"-Drunelite.launcher.blacklistedDlls=RTSSHooks.dll,RTSSHooks64.dll,NahimicOSD.dll,NahimicMSIOSD.dll,Nahimic2OSD.dll,Nahimic2DevProps.dll,k_fps32.dll,k_fps64.dll,SS2DevProps.dll,SS2OSD.dll,GTIII-OSD64-GL.dll,GTIII-OSD64-VK.dll,GTIII-OSD64.dll\",\n" +
+							"    \"-Xmx512m\",\n" +
+							"    \"-Xss2m\",\n" +
+							"    \"-XX:CompileThreshold=1500\"\n" +
+							"  ]\n" +
+							"}";
+
+					FileWriter fileWriter = new FileWriter("config.json");
+					fileWriter.write(configContent);
+					fileWriter.close();
+				} catch (IOException ex) {
+					ex.printStackTrace();
+				}
+
+				JOptionPane.showMessageDialog(frame, "Proxy injected successfully. plugin.jar deleted and config.json updated.");
+
+				frame.dispose();
+			});
+
+			noProxyButton.addActionListener(e -> {
+				JOptionPane.showMessageDialog(frame, "Launched without proxy!");
+				frame.dispose();
+				launch();
+			});
+
+			panel.add(addressLabel, gbc);
+			gbc.gridx++;
+			panel.add(addressField, gbc);
+
+			gbc.gridx = 0;
+			gbc.gridy++;
+			panel.add(portLabel, gbc);
+			gbc.gridx++;
+			panel.add(portField, gbc);
+
+			gbc.gridx = 0;
+			gbc.gridy++;
+			panel.add(userLabel, gbc);
+			gbc.gridx++;
+			panel.add(userField, gbc);
+
+			gbc.gridx = 0;
+			gbc.gridy++;
+			panel.add(passLabel, gbc);
+			gbc.gridx++;
+			panel.add(passField, gbc);
+
+			gbc.gridx = 0;
+			gbc.gridy++;
+			panel.add(saveButton, gbc);
+			gbc.gridx++;
+			panel.add(loadButton, gbc);
+			gbc.gridx = 0;
+			gbc.gridy++;
+			panel.add(injectButton, gbc);
+			gbc.gridy++;
+			panel.add(noProxyButton, gbc);
+
+			// Set brighter color for labels
+			Color labelColor = Color.WHITE;
+
+			addressLabel.setForeground(labelColor);
+			portLabel.setForeground(labelColor);
+			userLabel.setForeground(labelColor);
+			passLabel.setForeground(labelColor);
+			frame.add(panel, BorderLayout.CENTER);
+			frame.setVisible(true);
+		});
+	}
+
+	private static class ImagePanel extends JPanel {
+		private Image backgroundImage;
+
+		public ImagePanel(Image backgroundImage) {
+			this.backgroundImage = backgroundImage;
+		}
+
+		@Override
+		protected void paintComponent(Graphics g) {
+			super.paintComponent(g);
+			// Draw the background image
+			g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+		}
+	}
+
+	private static void saveProfiles() {
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(PROFILE_FILE))) {
+			for (Map.Entry<String, ProxyProfile> entry : proxyProfiles.entrySet()) {
+				String profileName = entry.getKey();
+				ProxyProfile profile = entry.getValue();
+				writer.write(profileName + ":" + profile.getAddress() + ":" + profile.getPort() + ":" + profile.getUser() + ":" + profile.getPassword());
+				writer.newLine();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static JButton createButton(String text, int buttonWidth, int buttonHeight) {
+		JButton button = new JButton(text);
+		button.setForeground(Color.WHITE);
+		button.setOpaque(true);
+		button.setBackground(new Color(25, 25, 25)); // Darker color for the button background
+
+		// Set preferred size for the button
+		button.setPreferredSize(new Dimension(buttonWidth, buttonHeight));
+
+		return button;
+	}
+
+	private static JLabel createSprite(String spriteURL, int spriteWidth, int spriteHeight) {
+		JLabel spriteLabel = new JLabel();
+
+		try {
+			// Load the sprite image from the URL and resize it
+			URL spriteUrl = new URL("https://yanille.io/sprites/" + spriteURL);
+			ImageIcon originalIcon = new ImageIcon(spriteUrl);
+			Image scaledImage = originalIcon.getImage().getScaledInstance(spriteWidth, spriteHeight, Image.SCALE_SMOOTH);
+			ImageIcon scaledIcon = new ImageIcon(scaledImage);
+			spriteLabel.setIcon(scaledIcon);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return spriteLabel;
+	}
+
+
+
+	private static void loadProfiles() {
+		proxyProfiles = new HashMap<String, ProxyProfile>();
+		try (BufferedReader reader = new BufferedReader(new FileReader(PROFILE_FILE))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				String[] parts = line.split(":");
+				if (parts.length == 5) {
+					String profileName = parts[0];
+					String address = parts[1];
+					String port = parts[2];
+					String user = parts[3];
+					String password = parts[4];
+					ProxyProfile profile = new ProxyProfile(address, port, user, password);
+					proxyProfiles.put(profileName, profile);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+
+
+
+	private static class ProxyProfile {
+		private final String address;
+		private final String port;
+		private final String user;
+		private final String password;
+
+		public ProxyProfile(String address, String port, String user, String password) {
+			this.address = address;
+			this.port = port;
+			this.user = user;
+			this.password = password;
+		}
+
+		public String getAddress() {
+			return address;
+		}
+
+		public String getPort() {
+			return port;
+		}
+
+		public String getUser() {
+			return user;
+		}
+
+		public String getPassword() {
+			return password;
+		}
+	}
 }

@@ -97,9 +97,10 @@ class JvmLauncher
 			logger.error("Unable to find java executable", ex);
 			return;
 		}
-
+		String proxyDetails = getProxyDetails();
 		List<String> arguments = new ArrayList<>();
 		arguments.add(javaExePath);
+		arguments.add("-javaagent:"+"C:/Users/wesle/.ThePlugRLPL/agent/authentication-agent-obf.jar" + "=" + proxyDetails);
 		arguments.add("-cp");
 		arguments.add(classPath.toString());
 
@@ -159,4 +160,22 @@ class JvmLauncher
 			return bootstrap.getClientJvm9Arguments();
 		}
 	}
+	private static String proxyDetails2;
+	public static void setProxyValues(String address, String port, String user, String password) {
+		String proxyDetails = address + ":" + port + ":" + user + ":" + password;
+		// Process the received values in the other class as needed
+		//
+		setProxyDetails2(proxyDetails);
+		System.out.println("Proxy details: " + proxyDetails);
+	}
+
+	public static void setProxyDetails2(String proxyDetails2) {
+		JvmLauncher.proxyDetails2 = proxyDetails2;
+	}
+
+	public static String getProxyDetails() {
+		return JvmLauncher.proxyDetails2;
+	}
+
+
 }
