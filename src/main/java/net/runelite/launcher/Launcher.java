@@ -93,11 +93,6 @@ public class Launcher
 		System.setProperty("runelite.launcher.reflect", "true");
 		new LauncherHijack();
 		// Launcher.main(args);
-		try{
-			Class<?> clazz = Class.forName("net.runelite.launcher.Launcher");
-			clazz.getMethod("main", String[].class).invoke(null, (Object) args);
-		} catch(Exception ignored){
-		}
 	}
 
 	public static void launch()
