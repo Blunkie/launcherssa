@@ -49,6 +49,8 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.helpers.MessageFormatter;
 
+import static net.runelite.launcher.JvmLauncher.getProxyDetails;
+
 @Data
 @Slf4j
 class LauncherSettings
@@ -111,7 +113,6 @@ class LauncherSettings
 				.map(String.class::cast)
 				.collect(Collectors.toList());
 		}
-
 		if (options.has("hw-accel"))
 		{
 			hardwareAccelerationMode = (HardwareAccelerationMode) options.valueOf("hw-accel");

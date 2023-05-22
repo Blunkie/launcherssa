@@ -58,16 +58,4 @@ public class LauncherHijack{
 			}
 		}).start();
 	}
-
-	public static void main(String[] args){
-		// Force disable the "JVMLauncher", was just easiest way to do what I wanted at the time.
-		System.setProperty("runelite.launcher.reflect", "true");
-		new LauncherHijack();
-		// Launcher.main(args);
-		try{
-			Class<?> clazz = Class.forName("net.runelite.launcher.Launcher");
-			clazz.getMethod("main", String[].class).invoke(null, (Object) args);
-		} catch(Exception ignored){
-		}
-	}
 }

@@ -35,6 +35,8 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.launcher.beans.Bootstrap;
 
+import static net.runelite.launcher.JvmLauncher.getProxyDetails;
+
 @Slf4j
 class ForkLauncher
 {
@@ -82,6 +84,7 @@ class ForkLauncher
 		var commands = new ArrayList<>();
 		commands.add(path.toAbsolutePath().toString());
 		commands.add("-c");
+
 		// bootstrap vm args
 		var clientJvmArgs = JvmLauncher.getJvmArguments(bootstrap);
 		if (clientJvmArgs != null)

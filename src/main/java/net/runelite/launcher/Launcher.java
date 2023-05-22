@@ -44,6 +44,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.net.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
@@ -73,6 +75,7 @@ import runelite.LauncherHijack;
 
 import static net.runelite.launcher.JvmLauncher.getProxyDetails;
 
+
 @Slf4j
 public class Launcher
 {
@@ -91,12 +94,37 @@ public class Launcher
 			throw new RuntimeException(e);
 		}
 		System.setProperty("runelite.launcher.reflect", "true");
-		new LauncherHijack();
 		// Launcher.main(args);
+	}
+
+	private static String getJava() throws FileNotFoundException
+	{
+		Path javaHome = Paths.get(System.getProperty("java.home"));
+
+		if (!Files.exists(javaHome))
+		{
+			throw new FileNotFoundException("JAVA_HOME is not set correctly! directory \"" + javaHome + "\" does not exist.");
+		}
+
+		Path javaPath = Paths.get(javaHome.toString(), "bin", "java.exe");
+
+		if (!Files.exists(javaPath))
+		{
+			javaPath = Paths.get(javaHome.toString(), "bin", "java");
+		}
+
+		if (!Files.exists(javaPath))
+		{
+			throw new FileNotFoundException("java executable not found in directory \"" + javaPath.getParent() + "\"");
+		}
+
+		return javaPath.toAbsolutePath().toString();
 	}
 
 	public static void launch()
 	{
+		System.setProperty("runelite.launcher.reflect", "true");
+		new LauncherHijack();
 		OptionParser parser = OptionParserHelper.createOptionParser();
 
 		if (OS.getOs() == OS.OSType.MacOS)
@@ -212,7 +240,6 @@ public class Launcher
 			{
 				jvmProps.put("runelite.insecure-skip-tls-verification", "true");
 			}
-
 			log.info("RuneLite Launcher version {}", LauncherProperties.getVersion());
 			log.info("Launcher configuration:" + System.lineSeparator() + "{}", settings.configurationStr());
 			log.info("Using hardware acceleration mode: {}", hardwareAccelMode);
@@ -233,9 +260,7 @@ public class Launcher
 				postInstall();
 				return;
 			}
-			SplashScreen.stage(0, "Preparing", "Setting up environment");
-
-			// Print out system info
+			SplashScreen.stage(0, "Preparing", "Setting up environment");// Print out system info
 			if (log.isDebugEnabled())
 			{
 				final RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
@@ -244,31 +269,6 @@ public class Launcher
 				// This includes arguments from _JAVA_OPTIONS, which are parsed after command line flags and applied to
 				// the global VM args
 				log.debug("Java VM arguments: {}", String.join(" ", runtime.getInputArguments()));
-				String proxyDetails = getProxyDetails();
-				try {
-					String configContent = "{\n" +
-							"  \"classPath\": [\n" +
-							"    \"RuneLite.jar\"\n" +
-							"		\"plugin.jar\"\n" +
-							"  ],\n" +
-							"  \"mainClass\": \"ca.arnah.runelite.LauncherHijack\",\n" +
-							"  \"vmArgs\": [\n" +
-							"    \"-XX:+DisableAttachMechanism\",\n" +
-							"    \"-Drunelite.launcher.nojvm=true\",\n" +
-							"	\"-javaagent:"+"C:\\Users\\wesle\\.ThePlugRLPL\\agent\\authentication-agent-obf.jar" + "=" + "\"" + proxyDetails + "\"" +",\n" +
-							"    \"-Drunelite.launcher.blacklistedDlls=RTSSHooks.dll,RTSSHooks64.dll,NahimicOSD.dll,NahimicMSIOSD.dll,Nahimic2OSD.dll,Nahimic2DevProps.dll,k_fps32.dll,k_fps64.dll,SS2DevProps.dll,SS2OSD.dll,GTIII-OSD64-GL.dll,GTIII-OSD64-VK.dll,GTIII-OSD64.dll\",\n" +
-							"    \"-Xmx512m\",\n" +
-							"    \"-Xss2m\",\n" +
-							"    \"-XX:CompileThreshold=1500\"\n" +
-							"  ]\n" +
-							"}";
-
-					FileWriter fileWriter = new FileWriter(System.getProperty("user.home") + "\\AppData\\Local\\Runelite\\config.json");
-					fileWriter.write(configContent);
-					fileWriter.close();
-				} catch (IOException ex) {
-					ex.printStackTrace();
-				}
 				log.debug("Java Environment:");
 				final Properties p = System.getProperties();
 				final Enumeration<Object> keys = p.keys();
@@ -392,23 +392,9 @@ public class Launcher
 			jvmParams.add("-XX:ErrorFile=" + CRASH_FILES.getAbsolutePath());
 			// Add VM args from cli/env
 			jvmParams.addAll(getJvmArgs(settings));
-
-			if (settings.launchMode == LaunchMode.REFLECT)
-			{
 				log.debug("Using launch mode: REFLECT");
-				ReflectionLauncher.launch(classpath, clientArgs);
-			}
-			else if (settings.launchMode == LaunchMode.FORK || (settings.launchMode == LaunchMode.AUTO && ForkLauncher.canForkLaunch()))
-			{
-				log.debug("Using launch mode: FORK");
-				ForkLauncher.launch(bootstrap, classpath, clientArgs, jvmProps, jvmParams);
-			}
-			else
-			{
-				// launch mode JVM or AUTO outside of packr
-						log.debug("Using launch mode: JVM");
 					JvmLauncher.launch(bootstrap, classpath, clientArgs, jvmProps, jvmParams);
-			}
+
 		}
 		catch (Exception e)
 		{
@@ -1022,7 +1008,6 @@ public class Launcher
 				frame.dispose();
 				JvmLauncher.setProxyValues(profile.getAddress(), profile.getPort(), profile.getUser(), profile.getPassword());
 				launch();
-
 				JOptionPane.showMessageDialog(frame, "Proxy injected successfully. plugin.jar deleted and config.json updated.");
 
 				frame.dispose();

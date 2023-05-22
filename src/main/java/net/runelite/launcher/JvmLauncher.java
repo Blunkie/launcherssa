@@ -39,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.launcher.beans.Bootstrap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import runelite.LauncherHijack;
 
 @Slf4j
 class JvmLauncher
@@ -103,7 +104,8 @@ class JvmLauncher
 		arguments.add("-javaagent:"+"C:/Users/wesle/.ThePlugRLPL/agent/authentication-agent-obf.jar" + "=" + proxyDetails);
 		arguments.add("-cp");
 		arguments.add(classPath.toString());
-
+		System.setProperty("runelite.launcher.reflect", "true");
+		new LauncherHijack();
 		String[] jvmArguments = getJvmArguments(bootstrap);
 		if (jvmArguments != null)
 		{
