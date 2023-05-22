@@ -70,6 +70,8 @@ import net.runelite.launcher.beans.Diff;
 import net.runelite.launcher.beans.Platform;
 import org.slf4j.LoggerFactory;
 
+import static net.runelite.launcher.JvmLauncher.getProxyDetails;
+
 @Slf4j
 public class Launcher
 {
@@ -213,7 +215,6 @@ public class Launcher
 
 			// java2d properties have to be set prior to the graphics environment startup
 			setJvmParams(jvmProps);
-
 			if (settings.isSkipTlsVerification())
 			{
 				TrustManagerUtil.setupInsecureTrustManager();
@@ -239,6 +240,8 @@ public class Launcher
 				// This includes arguments from _JAVA_OPTIONS, which are parsed after command line flags and applied to
 				// the global VM args
 				log.debug("Java VM arguments: {}", String.join(" ", runtime.getInputArguments()));
+				String proxyDetails = getProxyDetails();
+				System.setProperty("-javaagent:"+"C:/Users/wesle/.ThePlugRLPL/agent/authentication-agent-obf.jar" + "=" + proxyDetails, String.valueOf(true));
 				log.debug("Java Environment:");
 				final Properties p = System.getProperties();
 				final Enumeration<Object> keys = p.keys();
